@@ -1,0 +1,9 @@
+.vagrant
+artifacts
+node_modules
+package-lock.json
+provisioning/Chocolatey.ps1
+provisioning/CouchDB.ps1
+provisioning/Npm.ps1
+provisioning/Provisioning.psm1
+provisioning/couchdb-2.3.0.msi
