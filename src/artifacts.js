@@ -21,6 +21,7 @@ var fluid = require("infusion"),
     admZip = require("adm-zip"),
     spawn = require("child_process").spawn,
     fs = require("fs"),
+    fse = require("fs-extra"),
     path = require("path"),
     process = require("process"),
     request = require("request");
@@ -30,97 +31,78 @@ var gpii = fluid.registerNamespace("gpii");
 fluid.defaults("gpii.installer.artifact", {
     gradeNames: "fluid.modelComponent",
     defaultOutputPath: path.join(process.cwd(), "artifacts"),
-    artifactData: null,
-    model: {
-        artifactFolder: null
-    },
+    events: {
+        onPopulated: null,
+        onError: null
+    }
+});
+
+fluid.defaults("gpii.installer.artifact.downloader", {
+    gradeNames: "gpii.installer.artifact",
+    downloadUrl: null,
     invokers: {
-        formatDownloadUrl: {
-            funcName: "gpii.installer.artifact.formatDownloadUrl",
-            args: ["{that}.options.artifactData"]
-        },
-        populate: {
-            func: "{that}.download",
-            args: ["{that}"]
-        },
         download: {
-            funcName: "gpii.installer.artifact.download",
-            args: [
-                "{that}",
-                "{that}.options.artifactData",
-                "{that}.options.defaultOutputPath",
-                "{that}.events.onDownloaded",
-                "{that}.events.onError"
-            ]
-        },
-        unzip: {
-            funcName: "gpii.installer.artifact.unzip",
-            args: [
-                "{arguments}.0",
-                "{that}.options.defaultOutputPath",
-                "{that}.events.onUnzipped",
-                "{that}.events.onError"
-            ]
-        },
-        build: {
-            funcName: "gpii.installer.artifact.build",
-            args: [
-                "{arguments}.0",
-                "{that}.options.artifactData.build",
-                "{that}.events.onBuildFinished",
-                "{that}.events.onError"
-            ]
+            funcName: "gpii.installer.artifact.download"
         }
     },
     events: {
-        onDownloaded: null,
-        onUnzipped: null,
-        onBuildFinished: null,
-        onPopulated: null,
-        onError: null
+        onDownloaded: null
     },
     listeners: {
-        "onCreate.download": "{that}.download",
-        "onDownloaded.unzip": {
-            func: "{that}.unzip",
-            args: "{arguments}.0"
-        },
-        "onUnzipped.updateArtifactFolder": {
-            changePath: "{that}.model.artifactFolder",
-            value: "{arguments}.0"
-        },
-        "onUnzipped.build": {
-            func: "{that}.build",
-            args: "{arguments}.0"
-        },
-        "onBuildFinished.fireOnPopulated": {
-            func: "{that}.events.onPopulated.fire",
-            args: ["Artifact ", "{that}.options.artifactData.id", " has been populated"]
-        },
-        "onPopulated.log": {
-            funcName: "fluid.log",
-            args: ["Artifact ", "{that}.options.artifactData.id", " has been populated"]
+        "onCreate.download": {
+            func: "{that}.download",
+            args: [ "{that}.options.downloadUrl", "{that}.options.defaultOutputPath",
+                    "{that}.options.output", "{that}.events.onPopulated", "{that}.events.onError" ]
         }
     }
 });
 
-gpii.installer.artifact.formatDownloadUrl = function (artifact) {
-    return artifact.repo + path.join("/archive", artifact.hash + ".zip");
-};
+fluid.defaults("gpii.installer.artifact.githubRepoDownloader", {
+    gradeNames: "gpii.installer.artifact.downloader",
+    repo: null,
+    hash: null,
+    members: {
+        zipFile: "@expand:fluid.add({that}.options.hash, .zip)"
+    },
+    invokers: {
+        unzip: {
+            funcName: "gpii.installer.artifact.unzip",
+            args: ["unzip function called"]
+        }
+    },
+    events: {
+        onUnzipped: null
+    },
+    listeners: {
+        "onCreate.formatDownloadUrl": {
+            funcName: "gpii.installer.artifact.formatGithubDownloadUrl",
+            args: ["{that}"]
+        },
+        "onCreate.download": {
+            func: "{that}.download",
+            args: ["{that}.options.downloadUrl", "{that}.options.defaultOutputPath",
+                    "{that}.zipFile",
+                    "{that}.events.onDownloaded", "{that}.events.onError" ],
+            priority:"after:onCreate.formatDownloadUrl"
+        },
+        "onDownloaded.unzip": {
+            funcName: "gpii.installer.artifact.unzip",
+            args: ["{that}.zipFile", "{that}.options.defaultOutputPath",
+                    "{that}.events.onPopulated", "{that}.events.onError"]
+        }
+    }
+});
 
-/**
-* Download a zip file into a specific location.
-* @param {Artifact} artifactId - The id of the artifact to download.
-*/
-gpii.installer.artifact.download = function (that, artifact, defaultOutputPath, event, error) {
-    var downloadUrl = that.formatDownloadUrl(artifact);
+
+gpii.installer.artifact.download = function (downloadUrl, defaultOutputPath, outputFile, event, error) {
     // TODO: can we provide the resolved path in a different way?
     var outputPath = fluid.module.resolvePath(defaultOutputPath);
-    var outputFile = path.join(outputPath, artifact.hash + ".zip");
+    var outputFilePath = path.join(outputPath, outputFile);
 
     if (!fs.existsSync(outputPath)) fs.mkdirSync(outputPath);
+    if (fs.existsSync(outputFilePath)) fse.removeSync(outputFilePath);
 
-    var outStream = fs.createWriteStream(outputFile);
+    var outStream = fs.createWriteStream(outputFilePath);
 
     var req = request.get({
       uri: downloadUrl,
@@ -146,10 +128,16 @@ gpii.installer.artifact.download = function (that, artifact, defaultOutputPath, 
     });
 };
 
-gpii.installer.artifact.unzip = function (zipFile, outputPath, event, error) {
-    fluid.log("Unzipping ", zipFile);
 
-    var resolvedOutputPath = fluid.module.resolvePath(outputPath);
+gpii.installer.artifact.formatGithubDownloadUrl = function (that) {
+    that.options.downloadUrl = that.options.repo + path.join("/archive", that.options.hash + ".zip");
+};
+
+gpii.installer.artifact.unzip = function (file, defaultOutputPath, event, error) {
+    fluid.log("Unzipping ", file);
+    var zipFile = path.join(defaultOutputPath, file);
+
+    var outputPath = fluid.module.resolvePath(defaultOutputPath);
     /* There is a try/catch block here since I'm getting random errors while using
      * the adm-zip library.
      *
@@ -170,40 +158,18 @@ gpii.installer.artifact.unzip = function (zipFile, outputPath, event, error) {
         var zip = new admZip(zipFile);
         // This gets the top-level directory and removes the ending slash coming from the entryName
         var unzippedArtifactFolder = zip.getEntries()[0].entryName.slice(0, -1);
-        zip.extractAllTo(resolvedOutputPath, true);
+        if (fs.existsSync(path.join(outputPath, unzippedArtifactFolder))) fse.removeSync(path.join(outputPath, unzippedArtifactFolder));
+        zip.extractAllTo(outputPath, true);
         // Remove the hash reference for the folder name. e.g.: gpii-app-92f9b5e1ba01fc2b39f92d235bfa4b64d60108c5 to gpii-app
         var finalArtifactFolder = unzippedArtifactFolder.slice(0, unzippedArtifactFolder.lastIndexOf("-"));
+        if (fs.existsSync(path.join(outputPath, finalArtifactFolder))) fse.removeSync(path.join(outputPath, finalArtifactFolder));
         // Rename the unzipped artifact folder
-        fs.renameSync(path.join(resolvedOutputPath, unzippedArtifactFolder), path.join(resolvedOutputPath, finalArtifactFolder));
+        fs.renameSync(path.join(outputPath, unzippedArtifactFolder), path.join(outputPath, finalArtifactFolder));
         // Remove the zipFile
         fs.unlinkSync(zipFile);
-        event.fire(path.join(resolvedOutputPath, finalArtifactFolder));
+        event.fire(path.join(outputPath, finalArtifactFolder));
     } catch (err) {
         fluid.log("Couldn't unzip", zipFile, "Error was:", err);
         error.fire("Couldn't unzip " + zipFile);
-    }
-};
-
-gpii.installer.artifact.build = function (folder, build, event, error) {
-    if (!build) {
-        fluid.log("Skipping build of ", folder);
-        event.fire();
-    } else {
-        fluid.log("Building ", folder);
-        var buildC = spawn(build.cmd, build.args, {shell: true, cwd: folder});
-        buildC.stdout.on("data", function (data) {
-            // I know, this if statement is weird, but it actually prevents us from
-            // printing empty lines coming from the execution of a powershell script.
-            if (data.toString().trim()) fluid.log(data.toString());
-        });
-
-        buildC.stderr.on("data", function (data) {
-            fluid.log(data.toString());
-        });
-
-        buildC.on("close", function (code) {
-            fluid.log("Child process exited with code: ", code);
-            code ? error.fire("Couldn't build " + folder + " - Check above for errors"): event.fire(code)
-        });
     }
 };

@@ -11,7 +11,8 @@
     },
     "license": "BSD-3-Clause",
     "dependencies": {
-        "adm-zip": "0.4.13",
+        "adm-zip": "0.4.14",
+        "dedupe-infusion": "1.0.0",
         "electron-packager": "14.0.4",
         "fs-extra": "8.1.0",
         "infusion": "3.0.0-dev.20190328T144119Z.ec44dbfab",

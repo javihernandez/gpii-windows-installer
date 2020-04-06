@@ -17,25 +17,43 @@
 */
 "use strict"
 
-var fluid = require("infusion"),
+var dedupe = require("dedupe-infusion"),
+    fluid = require("infusion"),
     fs = require("fs"),
     fse = require("fs-extra"),
     spawn = require("child_process").spawn,
     path = require("path"),
     powershell = require("node-powershell");
 
-require("./artifacts.js");
+require("json5/lib/register");
+
 fluid.setLogging(true);
 
 var gpii = fluid.registerNamespace("gpii");
+require("./artifacts.js");
+require("./windowsService.js");
+
+var artifactsData = fluid.require("%gpii-windows-installer/data/artifacts.json5");
+
 
 fluid.defaults("gpii.installer", {
     gradeNames: "fluid.component",
-    artifactsData: fluid.require("%gpii-windows-installer/data/artifacts.json"),
-    artifacts: ["gpii-app", "gpii-wix-installer", "morphic-sharex-installer"], // TODO: Just load the json file
+    artifactsData: artifactsData,
     artifactsFolder: path.join(fluid.module.resolvePath("%gpii-windows-installer"), "artifacts"),
     resetToStandardFile: null, // TODO: This will be part of the artifacts.json file
     buildFolder: "c:/installer/",
+    components: {
+        windowsServiceBuilder: {
+            type: "gpii.installer.windowsServiceBuilder",
+            options: {
+                buildFolder: "{installer}.options.buildFolder",
+                events: {
+                    onWindowsServiceReady: "{installer}.events.onWindowsServiceReady"
+                }
+            },
+            createOnEvent: "onPackaged"
+        }
+    },
     invokers: {
         populateArtifacts: {
             funcName: "gpii.installer.populateArtifacts",
@@ -50,12 +68,16 @@ fluid.defaults("gpii.installer", {
             args: ["{that}"]
         },
         electronPackager: {
-          funcName: "gpii.installer.electronPackager",
-          args: ["{that}"]
+            funcName: "gpii.installer.electronPackager",
+            args: ["{that}"]
+        },
+        shrinkSize: {
+            funcName: "gpii.installer.shrinkSize",
+            args: ["{that}"]
         },
         runMsbuild: {
-          funcName: "gpii.installer.runMsbuild",
-          args: ["{that}"]
+            funcName: "gpii.installer.runMsbuild",
+            args: ["{that}"]
         }
     },
     events: {
@@ -63,52 +85,66 @@ fluid.defaults("gpii.installer", {
         onBuildFolderReady: null,
         onNpmInstallFinished: null,
         onPackaged: null,
+        onWindowsServiceReady: null,
+        onShrunk: null,
         onError: null
     },
     listeners: {
         "onCreate.populateArtifacts": {
             func: "{that}.populateArtifacts",
-            args: "{that}.options.artifacts"
+            args: "{that}.options.artifactsData"
         },
         "onPopulatedArtifacts.logResult": {
             funcName: "fluid.log",
-            args: ["Artifacts successfully populated: ", "{arguments}.0"]
+            args: ["Artifacts successfully populated"]
         },
         "onPopulatedArtifacts.prepareBuildFolder": "{that}.prepareBuildFolder",
         "onBuildFolderReady.runNpmInstall": "{that}.npmInstall",
         "onNpmInstallFinished.logResult": {
             funcName: "fluid.log",
-            args: ["npm install process succeed!"]
+            args: ["npm install process succeeded"]
         },
         "onNpmInstallFinished.runElectronPackager": "{that}.electronPackager",
         "onPackaged.logResult": {
             funcName: "fluid.log",
             args: ["Morphic-App successfully packaged: ", "{arguments}.0"]
         },
-        "onPackaged.runMsbuild": "{that}.runMsbuild",
-        "onError.logError": {
+        "onWindowsServiceReady.logResult": {
             funcName: "fluid.log",
+            args: ["Morphic service successfully created"]
+        },
+        "onWindowsServiceReady.shrinkSize": "{that}.shrinkSize",
+        "onShrunk.logResult": {
+            funcName: "fluid.log",
+            args: ["Shrunk size of node_modules folder"]
+        },
+        "onShrunk.runMsbuild": "{that}.runMsbuild",
+        //"onWindowsServiceReady.runMsbuild": "{that}.runMsbuild",
+        "onError.logError": {
+            funcName: "fluid.fail",
             args: "{arguments}.0"
         }
     }
 });
 
-gpii.installer.populateArtifacts = function (that, artifacts) {
+gpii.installer.populateArtifacts = function (that, artifactsData) {
     // clean the artifacts folder
     if (fs.existsSync(that.options.artifactsFolder)) {
         fse.removeSync(that.options.artifactsFolder);
     }
 
     var sequence = [];
+    var artifactsList = [];
 
-    fluid.each(artifacts, function (artifact) {
-        fluid.log("Populating: ", artifact);
+    fluid.each(artifactsData, function (artifactData, artifactName) {
+        fluid.log("Populating: ", artifactName);
         var promise = fluid.promise();
-        var artifact = gpii.installer.artifact({
-           artifactData: gpii.installer.getArtifactById(that.options.artifactsData, artifact),
-        });
+
+        var artifact = fluid.invokeGlobalFunction(artifactData.type, artifactData.options);
 
         artifact.events.onPopulated.addListener(function () {
+            fluid.log("Artifact ", artifactName, " has been populated");
+            artifactsList.push(artifactName);
             promise.resolve();
         });
         artifact.events.onError.addListener(function (err) {
@@ -119,18 +155,10 @@ gpii.installer.populateArtifacts = function (that, artifacts) {
     });
 
     fluid.promise.sequence(sequence).then(function (result) {
-        that.events.onPopulatedArtifacts.fire(artifacts);
+        that.events.onPopulatedArtifacts.fire();
     }, function (err) {
         that.events.onError.fire("An error occurred while trying to populate the artifacts. The error was: " + err);
     });
-};
-
-gpii.installer.getArtifactById = function (artifacts, id) {
-    return fluid.find(artifacts, function (artifact) {
-        if (artifact.id === id) {
-            return artifact;
-        }
-    }, null);
 };
 
 gpii.installer.prepareBuildFolder = function (that) {
@@ -158,9 +186,13 @@ gpii.installer.npmInstall = function (that) {
 
     buildC.on("close", function (code) {
         fluid.log("Child process exited with code: ", code);
-        that.events.onNpmInstallFinished.fire();
+
         // TODO: error handling
-        //code ? error.fire("Couldn't build " + folder + " - Check above for errors"): event.fire(code)
+        if (code) {
+            that.events.onError.fire("Couldn't finish npm install process - Check above for errors");
+        } else {
+            that.events.onNpmInstallFinished.fire();
+        }
     });
 };
 
@@ -195,6 +227,39 @@ gpii.installer.electronPackager = function (that) {
         fluid.log(appPaths);
         fse.renameSync(path.join(that.options.buildFolder, "staging", "morphic-app-win32-ia32"), path.join(that.options.buildFolder, "staging", "windows"));
         that.events.onPackaged.fire(appPaths);
+    });
+};
+
+// TODO: Rework this in a better way
+gpii.installer.shrinkSize = function (that) {
+    var stagingAppFolder = path.join(that.options.buildFolder, "staging", "windows", "resources", "app");
+    var stagingAppModulesFolder = path.join(stagingAppFolder, "node_modules");
+
+    // 1.- npm prune --production
+    var buildC = spawn("npm", ["prune", "--production"], {shell: true, cwd: stagingAppFolder});
+    buildC.stdout.on("data", function (data) {
+        // I know, this if statement is weird, but it actually prevents us from
+        // printing empty lines coming from the execution of a powershell script.
+        if (data.toString().trim()) fluid.log(data.toString());
+    });
+
+    buildC.stderr.on("data", function (data) {
+        fluid.log(data.toString());
+    });
+
+    buildC.on("close", function (code) {
+        fluid.log("Child process exited with code: ", code);
+
+        // TODO: error handling
+        if (code) {
+            that.events.onError.fire("Couldn't npm prune - Check above for errors");
+        } else {
+            // 2.- rm node_modules/electron
+            fse.removeSync(path.join(stagingAppModulesFolder, "electron"));
+            // 3.- dedupe-infusion
+            dedupe.dedupeInfusion({node_modules: stagingAppModulesFolder});
+            that.events.onShrunk.fire();
+        }
     });
 };
 

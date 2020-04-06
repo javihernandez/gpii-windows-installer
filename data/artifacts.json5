@@ -1,0 +1,46 @@
+{
+    "gpii-app": {
+        "type": "gpii.installer.artifact.githubRepoDownloader",
+        "options": {
+            "repo": "https://github.com/javihernandez/gpii-app",
+            "hash": "92f9b5e1ba01fc2b39f92d235bfa4b64d60108c5", // GPII-4004
+            "output": "gpii-app"
+        }
+    },
+    "gpii-wix-installer": {
+        "type": "gpii.installer.artifact.githubRepoDownloader",
+        "options": {
+            "repo": "https://github.com/javihernandez/gpii-wix-installer",
+            "hash": "5effd7a53430aca4654b0d44b36f059f5ab14acf", // GPII-4004
+            "output": "gpii-wix-installer"
+        }
+    },
+    "morphic-sharex-installer": {
+        "type": "gpii.installer.artifact.downloader",
+        "options": {
+            "downloadUrl": "https://github.com/javihernandez/morphic-sharex-installer/releases/download/0.1/sharex.msm",
+            "output": "sharex.msm"
+        }
+    },
+    "morphic-documorph-installer": {
+        "type": "gpii.installer.artifact.downloader",
+        "options": {
+            "downloadUrl": "https://github.com/javihernandez/morphic-documorph-installer/releases/download/0.1/documorph.msm",
+            "output": "documorph.msm"
+        }
+    },
+    "gpii-filebeat-installer": {
+        "type": "gpii.installer.artifact.downloader",
+        "options": {
+            "downloadUrl": "https://github.com/stegru/gpii-filebeat-installer/releases/download/1.0.0/filebeat.msm",
+            "output": "filebeat.msm"
+        }
+    },
+    "resetToStandardFile": {
+        "type": "gpii.installer.artifact.downloader",
+        "options": {
+            "downloadUrl": "https://raw.githubusercontent.com/GPII/universal/master/testData/defaultSettings/defaultSettings.win32.json5",
+            "output": "defaultSettings.json5"
+        }
+    }
+}

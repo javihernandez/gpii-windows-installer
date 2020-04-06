@@ -19,8 +19,8 @@
 
 var fluid = require("infusion");
 
-fluid.module.register("morphic-installer", __dirname, require);
+fluid.module.register("gpii-windows-installer", __dirname, require);
 
-var morphic = fluid.registerNamespace("morphic");
+var gpii = fluid.registerNamespace("gpii");
 
 require("./src/main.js");

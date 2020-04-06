@@ -7,6 +7,7 @@ require("./index.js");
 //fluid.logObjectRenderChars = 1200000;
 
 var m = gpii.installer({});
+//console.log("#### buildFolder: ", m.options.buildFolder);
 
 //m.npmInstall();
 
