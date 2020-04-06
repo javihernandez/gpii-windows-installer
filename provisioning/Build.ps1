@@ -69,5 +69,10 @@ try {
   exit 1
 }
 
+$npmCmd = "npm" -f $env:SystemDrive
+
+## npm install pkg globally
+Invoke-Command $npmCmd "install -g pkg"
+
 ## Run npm install
 Invoke-Command "npm" "install" $mainDir
