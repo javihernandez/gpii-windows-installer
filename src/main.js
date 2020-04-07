@@ -75,6 +75,10 @@ fluid.defaults("gpii.installer", {
             funcName: "gpii.installer.shrinkSize",
             args: ["{that}"]
         },
+        copyOptionalArtifacts: {
+            funcName: "gpii.installer.copyOptionalArtifacts",
+            args: ["{that}"]
+        },
         runMsbuild: {
             funcName: "gpii.installer.runMsbuild",
             args: ["{that}"]
@@ -87,6 +91,7 @@ fluid.defaults("gpii.installer", {
         onPackaged: null,
         onWindowsServiceReady: null,
         onShrunk: null,
+        onCopiedOptionalArtifacts: null,
         onError: null
     },
     listeners: {
@@ -118,8 +123,12 @@ fluid.defaults("gpii.installer", {
             funcName: "fluid.log",
             args: ["Shrunk size of node_modules folder"]
         },
-        "onShrunk.runMsbuild": "{that}.runMsbuild",
-        //"onWindowsServiceReady.runMsbuild": "{that}.runMsbuild",
+        "onShrunk.copyOptionalArtifacts": "{that}.copyOptionalArtifacts",
+        "onCopiedOptionalArtifacts.logResult": {
+            funcName: "fluid.log",
+            args: ["Copied optional artifacts"]
+        },
+        "onCopiedOptionalArtifacts.runMsbuild": "{that}.runMsbuild",
         "onError.logError": {
             funcName: "fluid.fail",
             args: "{arguments}.0"
@@ -262,6 +271,18 @@ gpii.installer.shrinkSize = function (that) {
         }
     });
 };
+
+gpii.installer.copyOptionalArtifacts = function (that) {
+    fluid.each(that.options.artifactsData, function (artifactData) {
+        if (artifactData.options.outputPath) {
+            var source = path.join(that.options.artifactsFolder, artifactData.options.output);
+            var target = path.join(that.options.buildFolder, artifactData.options.outputPath);
+            fs.copyFileSync(source, target);
+            fluid.log("Copied ", source, " to ", target);
+        }
+    });
+    that.events.onCopiedOptionalArtifacts.fire();
+}
 
 gpii.installer.runMsbuild = function (that) {
     // create output and temp folders in c:/installer
