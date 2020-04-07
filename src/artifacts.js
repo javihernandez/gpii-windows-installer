@@ -111,7 +111,7 @@ gpii.installer.artifact.download = function (downloadUrl, defaultOutputPath, out
 
     fluid.log("Downloading ", downloadUrl);
 
-    req.pipe(outStream);
+    var pipe = req.pipe(outStream);
 
     req.on("error", function (err) {
         var err = "Couldn't download artifact, error was: " + err;
@@ -124,7 +124,11 @@ gpii.installer.artifact.download = function (downloadUrl, defaultOutputPath, out
     req.on("end", function () {
         outStream.close();
         outStream = null;
-        event.fire(outputFile);
+        // This way we avoid the 'End-of-central-directory signature not found'
+        // error that sometimes we get.
+        pipe.on("close", function () {
+            event.fire(outputFile);
+        });
     });
 };
 
