@@ -141,7 +141,7 @@ gpii.installer.windowsServiceBuilder.copyFiles = function(serviceFolder, modules
     // along with it. Also, need to put the service.json5 file in the
     // same folder.
     fs.copyFileSync(
-        path.join(modulesFolder, "os-service", "build", "Release", "service.node"),
+        path.join(modulesFolder, "@gpii", "os-service", "build", "Release", "service.node"),
         path.join(serviceOutputFolder, "service.node")
     );
     fs.copyFileSync(
