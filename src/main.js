@@ -271,9 +271,16 @@ gpii.installer.shrinkSize = function (that) {
             // file from the gpii-windows bin folder
             fse.removeSync(path.join(stagingAppModulesFolder, "gpii-windows", "settingsHelper"));
             // 5 - remove unnecessary things
+            //  * This is used in case we want to debug the settingsHelper.exe
+            //    utility, but since the build is based on a particular gpii-app
+            //    git ref, we can build anytime the same code and debug from
+            //    the development environment, which is more convenient.
             fse.removeSync(path.join(stagingAppModulesFolder, "gpii-windows", "bin", "settingsHelper.pdb"));
+            //  * We don't need any of those deps from the gpii-service
             fse.removeSync(path.join(stagingAppModulesFolder, "gpii-windows", "gpii-service", "node_modules"));
+            //  * On electron we use electron-edge-js
             fse.removeSync(path.join(stagingAppModulesFolder, "edge-js"));
+            //  * We don't need to ship tests
             fse.removeSync(path.join(stagingAppModulesFolder, "gpii-universal", "tests"));
             fse.removeSync(path.join(stagingAppModulesFolder, "infusion", "tests"));
 
