@@ -19,14 +19,6 @@
     },
     // For the rest of the artifacts, we need to provide the outputPath, always
     // relative to the buildFolder, by default, c:/installer
-    "morphic-sharex-installer": {
-        "type": "gpii.installer.artifact.downloader",
-        "options": {
-            "downloadUrl": "https://github.com/javihernandez/morphic-sharex-installer/releases/download/0.1/sharex.msm",
-            "output": "sharex.msm",
-            "outputPath": "sharex.msm"
-        }
-    },
     "morphic-documorph-installer": {
         "type": "gpii.installer.artifact.downloader",
         "options": {
