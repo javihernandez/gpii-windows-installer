@@ -125,7 +125,7 @@ gpii.installer.artifact.download = function (downloadUrl, defaultOutputPath, out
         outStream.close();
         outStream = null;
         // This way we avoid the 'End-of-central-directory signature not found'
-        // error that sometimes we get.
+        // error that sometimes we get when downloading zip files.
         pipe.on("close", function () {
             event.fire(outputFile);
         });

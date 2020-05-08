@@ -267,6 +267,16 @@ gpii.installer.shrinkSize = function (that) {
             fse.removeSync(path.join(stagingAppModulesFolder, "electron"));
             // 3.- dedupe-infusion
             dedupe.dedupeInfusion({node_modules: stagingAppModulesFolder});
+            // 4 - remove settingsHelper folder - we only need the settingsHelper.exe
+            // file from the gpii-windows bin folder
+            fse.removeSync(path.join(stagingAppModulesFolder, "gpii-windows", "settingsHelper"));
+            // 5 - remove unnecessary things
+            fse.removeSync(path.join(stagingAppModulesFolder, "gpii-windows", "bin", "settingsHelper.pdb"));
+            fse.removeSync(path.join(stagingAppModulesFolder, "gpii-windows", "gpii-service", "node_modules"));
+            fse.removeSync(path.join(stagingAppModulesFolder, "edge-js"));
+            fse.removeSync(path.join(stagingAppModulesFolder, "gpii-universal", "tests"));
+            fse.removeSync(path.join(stagingAppModulesFolder, "infusion", "tests"));
+
             that.events.onShrunk.fire();
         }
     });
