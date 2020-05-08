@@ -3,8 +3,8 @@
     "gpii-app": {
         "type": "gpii.installer.artifact.githubRepoDownloader",
         "options": {
-            "repo": "https://github.com/javihernandez/gpii-app",
-            "hash": "92f9b5e1ba01fc2b39f92d235bfa4b64d60108c5", // GPII-4004
+            "repo": "https://github.com/GPII/gpii-app",
+            "hash": "2befbfe96a58533a0954a39203dfc8a4b6b16bd5", // master
             "output": "gpii-app"
         }
     },
@@ -13,7 +13,7 @@
         "type": "gpii.installer.artifact.githubRepoDownloader",
         "options": {
             "repo": "https://github.com/javihernandez/gpii-wix-installer",
-            "hash": "5effd7a53430aca4654b0d44b36f059f5ab14acf", // GPII-4004
+            "hash": "64c2e56e85d9a2e96d0ceefa36489cfba52468e7", // GPII-4402
             "output": "gpii-wix-installer"
         }
     },
