@@ -3,8 +3,8 @@
     "gpii-app": {
         "type": "gpii.installer.artifact.githubRepoDownloader",
         "options": {
-            "repo": "https://github.com/GPII/gpii-app",
-            "hash": "2befbfe96a58533a0954a39203dfc8a4b6b16bd5", // master
+            "repo": "https://github.com/javihernandez/gpii-app",
+            "hash": "ee701bc740b958a090ad09f8a742cc92138a4fb6", // morphic-1.3.5 branch
             "output": "gpii-app"
         }
     },
