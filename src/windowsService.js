@@ -157,6 +157,14 @@ gpii.installer.windowsServiceBuilder.copyFiles = function(serviceFolder, modules
         path.join(serviceOutputFolder, "nothing.node")
     );
     fs.copyFileSync(
+        path.join(modulesFolder, "win-ca", "lib", "crypt32-x64.node"),
+        path.join(serviceOutputFolder, "crypt32-x64.node")
+    );
+    fs.copyFileSync(
+        path.join(modulesFolder, "win-ca", "lib", "crypt32-ia32.node"),
+        path.join(serviceOutputFolder, "crypt32-ia32.node")
+    );
+    fs.copyFileSync(
         path.join(serviceFolder, "config", "service.json5"),
         path.join(serviceOutputFolder, "service.json5")
     );
