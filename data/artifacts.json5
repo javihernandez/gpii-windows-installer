@@ -12,8 +12,8 @@
     "gpii-wix-installer": {
         "type": "gpii.installer.artifact.githubRepoDownloader",
         "options": {
-            "repo": "https://github.com/javihernandez/gpii-wix-installer",
-            "hash": "878f7272af0d3c18b42042784dd1561f9f3fb728", // GPII-4402
+            "repo": "https://github.com/GPII/gpii-wix-installer",
+            "hash": "b98474d53e2e5aa667ed610bb19414e56790593a",
             "output": "gpii-wix-installer"
         }
     },
