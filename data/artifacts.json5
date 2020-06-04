@@ -22,7 +22,7 @@
     "morphic-documorph-installer": {
         "type": "gpii.installer.artifact.downloader",
         "options": {
-            "downloadUrl": "https://github.com/javihernandez/morphic-documorph-installer/releases/download/0.1/documorph.msm",
+            "downloadUrl": "https://github.com/javihernandez/morphic-documorph-installer/releases/download/0.2/documorph.msm",
             "output": "documorph.msm",
             "outputPath": "documorph.msm"
         }
