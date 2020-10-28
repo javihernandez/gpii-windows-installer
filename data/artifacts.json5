@@ -27,14 +27,15 @@
             "outputPath": "documorph.msm"
         }
     },
-    "gpii-filebeat-installer": {
-        "type": "gpii.installer.artifact.downloader",
-        "options": {
-            "downloadUrl": "https://github.com/stegru/gpii-filebeat-installer/releases/download/1.0.0/filebeat.msm",
-            "output": "filebeat.msm",
-            "outputPath": "filebeat.msm"
-        }
-    },
+    // Disabled in smartwork
+    // "gpii-filebeat-installer": {
+    //     "type": "gpii.installer.artifact.downloader",
+    //     "options": {
+    //         "downloadUrl": "https://github.com/stegru/gpii-filebeat-installer/releases/download/1.0.0/filebeat.msm",
+    //         "output": "filebeat.msm",
+    //         "outputPath": "filebeat.msm"
+    //     }
+    // },
     "resetToStandardFile": {
         "type": "gpii.installer.artifact.downloader",
         "options": {
