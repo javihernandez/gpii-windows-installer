@@ -42,5 +42,13 @@
             "output": "defaultSettings.json5",
             "outputPath": "staging/windows/resources/app/node_modules/gpii-universal/testData/defaultSettings/defaultSettings.json5"
         }
+    },
+    "messageBundles": {
+        "type": "gpii.installer.artifact.downloader",
+        "options": {
+            "downloadUrl": "https://raw.githubusercontent.com/javihernandez/gpii-l10n-bundles-experiments/compiledMessages/build/gpii-app-messageBundles.json",
+            "output": "gpii-app-messageBundles.json",
+            "outputPath": "staging/windows/resources/app/build/gpii-app-messageBundles.json"
+        }
     }
 }
