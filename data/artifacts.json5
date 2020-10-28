@@ -4,7 +4,7 @@
         "type": "gpii.installer.artifact.githubRepoDownloader",
         "options": {
             "repo": "https://github.com/javihernandez/gpii-app",
-            "hash": "af868916b3837f310bc4801a17763474eb19f505", // smartwork-review-1 branch
+            "hash": "74d15dd2fa738428186db04a0fa904d6d84215d8", // smartwork branch
             "output": "gpii-app"
         }
     },
