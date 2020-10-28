@@ -38,7 +38,7 @@
     "resetToStandardFile": {
         "type": "gpii.installer.artifact.downloader",
         "options": {
-            "downloadUrl": "https://raw.githubusercontent.com/GPII/universal/master/testData/defaultSettings/defaultSettings.win32.json5",
+            "downloadUrl": "https://raw.githubusercontent.com/javihernandez/universal/smartwork/testData/defaultSettings/defaultSettings.win32.json5",
             "output": "defaultSettings.json5",
             "outputPath": "staging/windows/resources/app/node_modules/gpii-universal/testData/defaultSettings/defaultSettings.json5"
         }
